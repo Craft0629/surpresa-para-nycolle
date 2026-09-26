@@ -33,67 +33,23 @@ document.body.classList.add("bloqueado");
 
 
 // ============================================================
-// YOUTUBE
+// ÁUDIO LOCAL (sem YouTube e sem anúncios)
 // ============================================================
 
-let player;
-let youtubePronto = false;
+const musicaPrincipal = document.getElementById("musicaPrincipal");
+const musicaSecreta = document.getElementById("musicaSecreta");
+
 let modoSecreto = false;
-let siteAberto = false;
+let posicaoPrincipal = 0;
 
+musicaPrincipal.volume = 0.35;
+musicaSecreta.volume = 0.45;
 
-// Essa função é chamada automaticamente pela API do YouTube.
-function onYouTubeIframeAPIReady() {
-
-    player = new YT.Player("youtubePlayer", {
-
-        height: "1",
-        width: "1",
-
-        videoId: MUSICA_PRINCIPAL,
-
-        playerVars: {
-            autoplay: 0,
-            controls: 0,
-            disablekb: 1,
-            fs: 0,
-            modestbranding: 1,
-            rel: 0
-        },
-
-        events: {
-
-            onReady: function () {
-                youtubePronto = true;
-                player.setVolume(35);
-
-                // Se a pessoa clicou em Descobrir antes da API terminar
-                // de carregar, a música começa assim que o player fica pronto.
-                if (siteAberto) {
-                    player.loadVideoById(MUSICA_PRINCIPAL);
-                    player.setVolume(35);
-                    player.playVideo();
-                }
-            },
-
-            onStateChange: function (event) {
-
-                // Se a música acabar, reinicia.
-                if (event.data === YT.PlayerState.ENDED) {
-
-                    player.seekTo(0);
-                    player.playVideo();
-
-                }
-
-            }
-
-        }
-
-    });
-
+function tocarPrincipal() {
+    musicaSecreta.pause();
+    musicaPrincipal.currentTime = posicaoPrincipal || musicaPrincipal.currentTime;
+    musicaPrincipal.play().catch(() => {});
 }
-
 
 // ============================================================
 // ABRIR SURPRESA
@@ -101,22 +57,15 @@ function onYouTubeIframeAPIReady() {
 
 botaoEntrar.addEventListener("click", () => {
 
-    siteAberto = true;
-
     entrada.classList.add("sumir");
     site.classList.add("visivel");
 
     document.body.classList.remove("bloqueado");
 
-
-    // Música só pode iniciar depois da interação do usuário.
-    if (youtubePronto && player) {
-
-        player.loadVideoById(MUSICA_PRINCIPAL);
-        player.setVolume(35);
-        player.playVideo();
-
-    }
+    // O clique em “Descobrir” autoriza o áudio nos navegadores móveis.
+    posicaoPrincipal = 0;
+    musicaPrincipal.currentTime = 0;
+    musicaPrincipal.play().catch(() => {});
 
 
     // Easter egg só aparece depois que o site é aberto.
@@ -402,71 +351,29 @@ function criarExplosaoCoracoes(quantidade) {
 
 easterEgg.addEventListener("click", () => {
 
-    if (!youtubePronto || !player) {
-        return;
-    }
-
-
-    // --------------------------------------------------------
-    // ATIVAR MÚSICA SECRETA
-    // --------------------------------------------------------
-
     if (!modoSecreto) {
-
         modoSecreto = true;
-
         easterEgg.classList.add("ativo");
 
-
-        // Guarda a música principal e troca pela secreta.
-        player.loadVideoById(MUSICA_SECRETA);
-
-        player.setVolume(45);
-
-        player.playVideo();
-
+        posicaoPrincipal = musicaPrincipal.currentTime;
+        musicaPrincipal.pause();
+        musicaSecreta.currentTime = 0;
+        musicaSecreta.play().catch(() => {});
 
         mensagemSecreta.classList.add("mostrar");
+        setTimeout(() => mensagemSecreta.classList.remove("mostrar"), 2800);
 
-
-        setTimeout(() => {
-
-            mensagemSecreta.classList.remove("mostrar");
-
-        }, 2800);
-
-
-        // Pequena reação visual
         for (let i = 0; i < 12; i++) {
-
-            setTimeout(() => {
-
-                criarCoracaoVerde();
-
-            }, i * 80);
-
+            setTimeout(() => criarCoracaoVerde(), i * 80);
         }
-
-    }
-
-
-    // --------------------------------------------------------
-    // VOLTAR PARA A MÚSICA PRINCIPAL
-    // --------------------------------------------------------
-
-    else {
-
+    } else {
         modoSecreto = false;
-
         easterEgg.classList.remove("ativo");
 
-
-        player.loadVideoById(MUSICA_PRINCIPAL);
-
-        player.setVolume(35);
-
-        player.playVideo();
-
+        musicaSecreta.pause();
+        musicaSecreta.currentTime = 0;
+        musicaPrincipal.currentTime = posicaoPrincipal;
+        musicaPrincipal.play().catch(() => {});
     }
 
 });
